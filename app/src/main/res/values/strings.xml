@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">[ 14KDH Sztabówki Offline ]</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="action_myLoc">Moja pozycja</string>
+    <string name="action_map_list">Wybierz mapę</string>
+    <string name="title_activity_map_select">Wybierz mapę</string>
+    <string name="action_back">Wróć</string>
+
+</resources>
