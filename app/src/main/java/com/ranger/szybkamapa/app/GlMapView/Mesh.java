@@ -222,6 +222,7 @@ public class Mesh {
 	 * @param bitmap
 	 */
 	public void loadBitmap(Bitmap bitmap) { // New function.
+
 		this.mBitmap = bitmap;
 		mShouldLoadTexture = true;
 	}
@@ -236,6 +237,8 @@ public class Mesh {
 		int[] textures = new int[1];
 		gl.glGenTextures(1, textures, 0);
 		mTextureId = textures[0];
+
+        gl.glDeleteTextures(1,textures,0);
 
 		// ...and bind it to our array
 		gl.glBindTexture(GL10.GL_TEXTURE_2D, mTextureId);

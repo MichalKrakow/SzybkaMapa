@@ -8,10 +8,6 @@ import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Canvas;
-import android.graphics.Matrix;
-import android.graphics.Paint;
-import android.graphics.PorterDuff;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -35,7 +31,9 @@ import android.widget.Toast;
 
 import com.ranger.szybkamapa.app.GlMapView.MyGlSurfaceView;
 import com.ranger.szybkamapa.app.Map.AverageAngle;
+import com.ranger.szybkamapa.app.Map.Crd;
 import com.ranger.szybkamapa.app.Map.Map;
+import com.ranger.szybkamapa.app.Tools.BitmapResources;
 import com.ranger.szybkamapa.app.services.ReLocation;
 
 import java.io.File;
@@ -48,6 +46,7 @@ public class MainActivity extends Activity implements View.OnClickListener, Serv
     public final static String SEND_LON = "com.ranger.szybkamapa.app.lon";
     public static final int POBIERZ_PLIK_MAPY = 15002900;
 
+    public static Activity thisActivity = null;
 
     private Button btn_home, btn_orders,btn_mark, btn_gps,btn_map;
     private final Messenger mMessenger = new Messenger(new IncomingMessageHandler());
@@ -98,6 +97,10 @@ public class MainActivity extends Activity implements View.OnClickListener, Serv
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        thisActivity = this;
+
+
+        BitmapResources.getInstance().addBitmap(0,BitmapFactory.decodeResource(getResources(), R.drawable.pointer));
 
         resumeFromPreferences(); // Wczytaj dane konfiguracji
 
@@ -170,6 +173,10 @@ public class MainActivity extends Activity implements View.OnClickListener, Serv
         Toast toast = Toast.makeText(getApplicationContext(), message, Toast.LENGTH_SHORT);
         toast.show();
     }
+    public static void showMsg(String msg)
+    {
+        Toast.makeText(thisActivity, msg , Toast.LENGTH_LONG).show();
+    }
     private void resumeFromPreferences()
     {
         SharedPreferences prefs = getSharedPreferences(MainActivity.PREFERENCJE,0);
@@ -214,22 +221,15 @@ public class MainActivity extends Activity implements View.OnClickListener, Serv
 
     private void setMap(String mapFilePath)
     {
-        Log.wtf("APKA",mapFilePath);
+        String path = Environment.getExternalStorageDirectory().toString() + "/mapy";
+        Map tmp_map = new Map(new File(path + "/" + mapFilePath));
 
-        try {
-            String path = Environment.getExternalStorageDirectory().toString() + "/mapy";
-            mapa = new Map(new File(path + "/" + mapFilePath));
-            mapa.setupMap();
-            glmap.setMap(mapa);
-        }
-        catch (Exception e)
-        {
-            showToastMsg("Błąd wczytwania mapy");
-            Log.wtf("WCZYTYWANIE MAPY",e.getMessage());
-            if(mapa.initialized)
-                mapa.initialized = false; // przy bledach przy pobieraniu jpg zmien flage mapy na niezainicjowana
+        if(tmp_map.setupMap());
+        mapa = tmp_map;
 
-        }
+        tmp_map = null;
+
+        if(mapa.initialized) glmap.setMap(mapa);
     }
     private void redrawAllShit()
     {
@@ -241,12 +241,10 @@ public class MainActivity extends Activity implements View.OnClickListener, Serv
             if(!mapa.initialized)
             return;
 
-            //mapPixelSize.x = mapa.getMapCalibrationPoint(2).pxLoc.x - mapa.getMapCalibrationPoint(0).pxLoc.x;
-            //mapPixelSize.y = mapa.getMapCalibrationPoint(2).pxLoc.y - mapa.getMapCalibrationPoint(0).pxLoc.y;
+            positionCoords.x = (((curLoc.getLongitude()-mapa.getMapCalibrationPoint(0).geoLoc.x)/(mapa.getMapCalibrationPoint(2).geoLoc.x-mapa.getMapCalibrationPoint(0).geoLoc.x))*mapa.mapPixelSize.x)+(mapa.getMapCalibrationPoint(0).pxLoc.x);
+            positionCoords.y = (((curLoc.getLatitude()-mapa.getMapCalibrationPoint(0).geoLoc.y)/(mapa.getMapCalibrationPoint(2).geoLoc.y-mapa.getMapCalibrationPoint(0).geoLoc.y)*mapa.mapPixelSize.y))+(mapa.getMapCalibrationPoint(0).pxLoc.y);
 
-            //positionCoords.x = (((curLoc.getLongitude()-mapa.getMapCalibrationPoint(0).geoLoc.x)/(mapa.getMapCalibrationPoint(2).geoLoc.x-mapa.getMapCalibrationPoint(0).geoLoc.x))*mapPixelSize.x*c)+(mapa.getMapCalibrationPoint(0).pxLoc.x*c);
-            //positionCoords.y = (((curLoc.getLatitude()-mapa.getMapCalibrationPoint(0).geoLoc.y)/(mapa.getMapCalibrationPoint(2).geoLoc.y-mapa.getMapCalibrationPoint(0).geoLoc.y)*mapPixelSize.y*c))+(mapa.getMapCalibrationPoint(0).pxLoc.y*c);
-
+            glmap.setPosition(positionCoords);
             /*
             matrix = mAttacher.getDrawMatrix();
 
@@ -422,7 +420,7 @@ public class MainActivity extends Activity implements View.OnClickListener, Serv
             mAzimuthRadians.putValue(mMatrixValues[0]);
             mAzimuth = Math.toDegrees(mAzimuthRadians.getAverage());
             heading = (float) mAzimuth;
-            redrawAllShit();
+            //redrawAllShit();
         }
 
         /*
@@ -437,16 +435,6 @@ public class MainActivity extends Activity implements View.OnClickListener, Serv
 
     }
 
-    private class Crd {
-        public double x;
-        public double y;
-
-        public Crd(double x, double y)
-        {
-            this.x = x;
-            this.y = y;
-        }
-    }
     private class IncomingMessageHandler extends Handler {
         @Override
         public void handleMessage(Message msg) {

@@ -5,8 +5,8 @@ import android.opengl.GLSurfaceView;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
-import android.support.v4.view.MotionEventCompat;
 
+import com.ranger.szybkamapa.app.Map.Crd;
 import com.ranger.szybkamapa.app.Map.Map;
 
 /**
@@ -38,7 +38,7 @@ public class MyGlSurfaceView extends GLSurfaceView {
 
         if(isInEditMode()) return; // w edytorze XML nie produkuj się z resztą kodu - tylko podstawowy view
 
-        //setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
+        setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
         mScaleDetector = new ScaleGestureDetector(this.getContext(), new ScaleListener());
     }
 
@@ -71,7 +71,7 @@ public class MyGlSurfaceView extends GLSurfaceView {
                 scale_flag = false;
             break;
         }
-        //requestRender();
+        requestRender();
         return true;
     }
     @Override
@@ -86,9 +86,17 @@ public class MyGlSurfaceView extends GLSurfaceView {
         super.onPause();
     }
 
+    public void setPosition(Crd pozycja)
+    {
+        renderer.setPosition(pozycja);
+        requestRender();
+    }
     public boolean setMap(Map mapa)
     {
-        renderer.setMap(mapa.image);
+        if(mapa.initialized == true) {
+            renderer.setMap(mapa);
+        }
+
         return true;
     }
 
@@ -99,17 +107,20 @@ public class MyGlSurfaceView extends GLSurfaceView {
             mScaleFactor = Math.max(1f, Math.min(mScaleFactor, 8.0f));
             renderer.setScale(mScaleFactor);
             //Log.v("APKA", "SKALUJE" + mScaleFactor);
+            requestRender();
             return true;
         }
 
         @Override
         public boolean onScaleBegin(ScaleGestureDetector detector) {
+            requestRender();
             scale_flag = true;
             return true;
         }
 
         @Override
         public void onScaleEnd(ScaleGestureDetector detector) {
+            requestRender();
         }
     }
 }

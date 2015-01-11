@@ -1,17 +1,15 @@
 package com.ranger.szybkamapa.app.Map;
 
-import android.graphics.Matrix;
+import android.graphics.BitmapFactory;
 import android.graphics.Point;
-import android.graphics.PointF;
 import android.os.Environment;
-import android.util.Log;
+
+import com.ranger.szybkamapa.app.MainActivity;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Vector;
 
 /**
@@ -23,6 +21,10 @@ public class Map {
     public String name;
     public Vector<MapCalibrationPoint> points;
     public Boolean initialized = false;
+    public int image_width;
+    public int image_height;
+    public Crd mapPixelSize;
+
 
     public Map(File file)
     {
@@ -31,7 +33,8 @@ public class Map {
     }
     public boolean setupMap()
     {
-        return readMapFile();
+        this.initialized = readMapFile();
+        return this.initialized;
     }
     public MapCalibrationPoint getMapCalibrationPoint(int i)
     {
@@ -42,7 +45,6 @@ public class Map {
     }
     private boolean readMapFile()
     {
-
         try {
 
             Vector<FPoint> tempPoints = new Vector<FPoint>();
@@ -78,15 +80,37 @@ public class Map {
                     points.add(new MapCalibrationPoint( new Point( (int)tempPoints.get(i).x ,(int)tempPoints.get(i).y ) , new FPoint(tempPoints.get(i+4).x,tempPoints.get(i+4).y)));
                     //Log.v("GOTOWY PUNKT",points.get(i).toString());
                 }
+                mapPixelSize = new Crd(this.getMapCalibrationPoint(2).pxLoc.x - this.getMapCalibrationPoint(0).pxLoc.x,
+                                       this.getMapCalibrationPoint(2).pxLoc.y - this.getMapCalibrationPoint(0).pxLoc.y);
+
+            }
+            else {
+                throw new IOException("Nieprawidłowy plik .map");
             }
             tempPoints = null;
 
+            File jpg = new File(image);
+            if(jpg.isFile())
+            {
+                BitmapFactory.Options options = new BitmapFactory.Options();
+                options.inJustDecodeBounds = true;
+
+                BitmapFactory.decodeFile(image, options);
+                image_width = options.outWidth;
+                image_height = options.outHeight;
+            }
+            else
+            {
+                throw new IOException("Brak pliku:\n" + jpg.getName());
+            }
+
         }
-        catch (IOException e)
-        {
+        catch (IOException e) {
+
+            MainActivity.showMsg(e.getMessage());
             return false;
         }
-        this.initialized = true;
         return true;
     }
+
 }

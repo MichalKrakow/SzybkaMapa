@@ -203,6 +203,9 @@ public class ReLocation extends Service implements LocationListener, GpsStatus.L
 
     @Override
     public void onGpsStatusChanged(int event) {
+        if(locationManager == null)
+            return;
+
         gpsStatus = locationManager.getGpsStatus(gpsStatus);
         switch (event) {
             case GpsStatus.GPS_EVENT_STARTED:

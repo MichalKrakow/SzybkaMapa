@@ -7,5 +7,6 @@
     <string name="action_map_list">Wybierz mapę</string>
     <string name="title_activity_map_select">Wybierz mapę</string>
     <string name="action_back">Wróć</string>
+    <string name="brak_jpg">Brak pliku jpg:\n</string>
 
 </resources>
